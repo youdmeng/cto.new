@@ -119,7 +119,9 @@ def csv_to_json(csv_file, output_file=None, config=None):
     
     # 生成监测对象（通常一个项目一个对象）
     first_equip = equipment_list[0]
-    object_code = f"{default_config['region_code']}_{default_config['sys_flag']}_OBJ_001"
+    # 优先使用第一条记录的区划编码，如果没有则使用配置的默认值
+    object_region_code = safe_str(first_equip.get('区划编码'), default_config['region_code'])
+    object_code = f"{object_region_code}_{default_config['sys_flag']}_OBJ_001"
     
     # 计算对象的平均经纬度（排除空值）
     valid_coords = [(safe_float(row.get('经度')), safe_float(row.get('纬度'))) 
@@ -138,7 +140,7 @@ def csv_to_json(csv_file, output_file=None, config=None):
         "coamObjectName": default_config['object_name'],
         "coamObjectType": default_config['object_type'],
         "coamObjectMechanism": safe_str(first_equip.get('施工单位'), default_config['manage_company']),
-        "coamObjectRegion": default_config['region_code'],
+        "coamObjectRegion": object_region_code,
         "coamObjectProject": default_config['project_id'],
         "coamObjectPosition": safe_str(first_equip.get('施工区域'), ''),
         "coamObjectStatus": "ENABLE",
@@ -172,6 +174,8 @@ def csv_to_json(csv_file, output_file=None, config=None):
         location = safe_str(row.get('安装位置'), f'位置{idx}')
         area = safe_str(row.get('施工区域'), '')
         company = safe_str(row.get('施工单位'), default_config['manage_company'])
+        # 获取当前行的区划编码，如果没有则使用配置的默认值
+        point_region_code = safe_str(row.get('区划编码'), default_config['region_code'])
         
         # 点位数据
         point_data = {
@@ -182,7 +186,7 @@ def csv_to_json(csv_file, output_file=None, config=None):
             "coamPointAlarm": "是",
             "coamPointThreshold": "是",
             "coamPointObjectCode": object_code,
-            "coamPointRegion": default_config['region_code'],
+            "coamPointRegion": point_region_code,
             "coamPointPosition": location,
             "coamUsable": 0,
             "coamLongitude": longitude,
@@ -301,7 +305,7 @@ if __name__ == "__main__":
     }
     
     # 转换CSV到JSON
-    csv_to_json('D:\辰安科技\项目\怀柔燃气\部署\振动监测\equipment_data.csv', 'D:\辰安科技\项目\怀柔燃气\部署\振动监测\output.json', config)
+    csv_to_json(r'D:\辰安科技\项目\怀柔燃气\部署\振动监测\equipment_data.csv', r'D:\辰安科技\项目\怀柔燃气\部署\振动监测\output.json', config)
     
     # 或者使用默认配置
     # csv_to_json('equipment_data.csv')
